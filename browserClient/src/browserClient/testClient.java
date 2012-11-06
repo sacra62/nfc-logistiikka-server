@@ -26,6 +26,6 @@ public class testClient
 
   private static URI getBaseURI() 
   {
-    return UriBuilder.fromUri("http://localhost:8080/nfc").build();
+    return UriBuilder.fromUri("http://153.1.62.153/testnfc").build();
   }
 } 
