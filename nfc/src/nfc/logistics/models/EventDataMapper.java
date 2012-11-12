@@ -1,62 +1,110 @@
 package nfc.logistics.models;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class EventDataMapper extends AbstractDataMapper
-{
-	private ArrayList<Event> domainContainer;
+{	
+	private final static String DATABASE_NAME = "nfc_logistics";
+	private final static String MAPPED_TABLE_NAME = "Event";
 	
 	public EventDataMapper()
 	{
-		super("nfc_logistics");
-		this.domainContainer = new ArrayList<Event>();
+		super(DATABASE_NAME);
 	}
 	
-	public ArrayList<Event> getEveryEvent()
+	public ArrayList<Event> findAll()
 	{
+		ArrayList<Event> domainContainer = new ArrayList<Event>();
+		
 		try 
 		{
-			this.dbResults = this.query("SELECT * FROM Event");
+			ResultSet dbResults = this.query("SELECT * FROM " + MAPPED_TABLE_NAME);
 			
-			while(this.dbResults.next())
+			while(dbResults.next())
 			{
 				Event e = new Event();
-				e.setEventId(this.dbResults.getInt("eventId"));
-				e.setEventShortName(this.dbResults.getString("shortName"));
-				e.setEventName(this.dbResults.getString("humanReadableName"));
-				this.domainContainer.add(e);
+				e.setEventId(dbResults.getInt("eventId"));
+				e.setEventShortName(dbResults.getString("shortName"));
+				e.setEventName(dbResults.getString("humanReadableName"));
+				domainContainer.add(e);
 			}
-			this.closeAll();
+			
+			dbResults.close();
 		} 
 		catch (SQLException e) 
 		{
 			e.printStackTrace();
 		}
-		return this.domainContainer;
+		finally
+		{
+			this.closeAll();
+		}
+		
+		return domainContainer;
 	}
 	
-	public Event findEvent(int id)
+	public Event find(int id)
 	{
 		Event e = null;
 		
 		try
 		{
-			this.dbResults = this.query("SELECT * FROM Event WHERE eventId=" + id);
+			ResultSet dbResults = this.paramQuery("SELECT * FROM " + MAPPED_TABLE_NAME + " WHERE eventId=", id);
 			
-			while(this.dbResults.next())
+			while(dbResults.next())
 			{
 				e = new Event();
-				e.setEventId(this.dbResults.getInt("eventId"));
-				e.setEventShortName(this.dbResults.getString("shortName"));
-				e.setEventName(this.dbResults.getString("humanReadableName"));	
+				e.setEventId(dbResults.getInt("eventId"));
+				e.setEventShortName(dbResults.getString("shortName"));
+				e.setEventName(dbResults.getString("humanReadableName"));	
 			}
+			
+			dbResults.close();
 		}
 		catch(SQLException exc)
 		{
 			
 		}
+		finally
+		{
+			this.closeAll();
+		}
 		
 		return e;
+	}
+	
+	public ArrayList<Event> findAllowedEventsForChain(int id)
+	{	
+		ArrayList<Event> domainContainer = new ArrayList<Event>();
+		
+		try
+		{
+			ResultSet dbResults = this.paramQuery("SELECT " + MAPPED_TABLE_NAME + ".* FROM AllowedEventsInLogisticsChain LEFT JOIN (" + MAPPED_TABLE_NAME + ")" +
+										" ON (AllowedEventsInLogisticsChain.eventId = " + MAPPED_TABLE_NAME + ".eventId)" +
+										" WHERE AllowedEventsInLogisticsChain.chainId = ?", id);
+			
+			while(dbResults.next())
+			{
+				Event e = new Event();
+				e.setEventId(dbResults.getInt("eventId"));
+				e.setEventShortName(dbResults.getString("shortName"));
+				e.setEventName(dbResults.getString("humanReadableName"));
+				domainContainer.add(e);
+			}
+			
+			dbResults.close();
+		}
+		catch(SQLException exc)
+		{
+			
+		}
+		finally
+		{
+			this.closeAll();
+		}
+	
+		return domainContainer;
 	}
 }

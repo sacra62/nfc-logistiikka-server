@@ -19,6 +19,12 @@ public abstract class AbstractDataMapper
 	protected Statement stmt;
 	protected PreparedStatement prepStmt;
 	
+	private final static String MYSQL_DRIVER_URL = "java:comp/env/jdbc/"; 
+	
+	// Abstract methods
+	protected abstract Object find(int id);
+	protected abstract Object findAll();
+	
 	protected AbstractDataMapper(String dbName)
 	{
 		this.databaseName = dbName;
@@ -27,7 +33,7 @@ public abstract class AbstractDataMapper
 		try 
 		{
 			initCtx = new InitialContext();
-			this.source = (DataSource)initCtx.lookup("java:comp/env/jdbc/" + this.databaseName);
+			this.source = (DataSource)initCtx.lookup(MYSQL_DRIVER_URL + this.databaseName);
 		} 
 		catch (NamingException e) 
 		{
@@ -35,29 +41,69 @@ public abstract class AbstractDataMapper
 		}
 	}
 	
-	protected ResultSet query(String sqlQuery) throws SQLException
+	protected ResultSet query(String sqlQuery)
 	{
-		this.con = source.getConnection();
-		this.stmt = this.con.createStatement();
-		return this.stmt.executeQuery(sqlQuery);
+		try 
+		{
+			this.con = this.source.getConnection();
+			this.stmt = this.con.createStatement();
+			this.dbResults = this.stmt.executeQuery(sqlQuery);
+		} 
+		catch (SQLException e) 
+		{
+	
+		}
+		
+		return this.dbResults;
 	}
 
 	// Later, we'll make the params more flexible...
-	protected ResultSet paramQuery(String sqlQuery, int param) throws SQLException
+	protected ResultSet paramQuery(String sqlQuery, int param)
 	{
-		this.con = source.getConnection();
-		this.prepStmt = this.con.prepareStatement(sqlQuery);
-		this.prepStmt.setInt(1, param);
-		return this.prepStmt.executeQuery();
+		try
+		{
+			this.con = this.source.getConnection();
+			this.prepStmt = this.con.prepareStatement(sqlQuery);
+			this.prepStmt.setInt(1, param);
+			this.dbResults = this.prepStmt.executeQuery();
+		}
+		catch(SQLException e)
+		{
+			
+		}
+	
+		return this.dbResults;
 	}
 	
-	protected void closeAll() throws SQLException 
+	// Close all resources, connections etc. in a reverse order of acquisition
+	protected void closeAll()
 	{
-		if(this.dbResults != null)
-			this.dbResults.close();
-		if(this.con != null)
-			this.con.close();
-		if(this.stmt != null)
-			this.stmt.close();
-	}
+		try
+		{
+			if(this.dbResults != null)
+			{
+				this.dbResults.close();
+				this.dbResults = null;
+			}
+			if(this.stmt != null)
+			{
+				this.stmt.close();
+				this.stmt = null;
+			}
+			if(this.prepStmt != null)
+			{
+				this.prepStmt.close();
+				this.prepStmt = null;
+			}
+			if(this.con != null)
+			{
+				this.con.close();
+				this.con = null;
+			}
+		}
+		catch(SQLException e)
+		{
+			
+		}
+	}	
 }

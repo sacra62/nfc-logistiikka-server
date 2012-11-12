@@ -1,38 +1,47 @@
 package nfc.logistics.models;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class AllowedItemTypeDataMapper extends AbstractDataMapper
-{
-	private ArrayList<AllowedItemType> domainContainer;
+{	
+	private final static String DATABASE_NAME = "nfc_logistics";
+	private final static String MAPPED_TABLE_NAME = "ItemType";
 	
 	public AllowedItemTypeDataMapper()
 	{
-		super("nfc_logistics");
-		this.domainContainer = new ArrayList<AllowedItemType>();
+		super(DATABASE_NAME);
 	}
 	
-	public ArrayList<AllowedItemType> getEveryItemType()
+	public ArrayList<AllowedItemType> findAll()
 	{
+		ArrayList<AllowedItemType> domainContainer = new ArrayList<AllowedItemType>();
+		
 		try 
 		{
-			this.dbResults = this.query("SELECT * FROM ItemType");
+			ResultSet dbResults = this.query("SELECT * FROM " + MAPPED_TABLE_NAME);
 			
-			while(this.dbResults.next())
+			while(dbResults.next())
 			{
 				AllowedItemType it = new AllowedItemType();
-				it.setItemTypeId(this.dbResults.getInt("itemTypeId"));
-				it.setHumanReadableName(this.dbResults.getString("humanReadableName"));
-				this.domainContainer.add(it);
+				it.setItemTypeId(dbResults.getInt("itemTypeId"));
+				it.setHumanReadableName(dbResults.getString("humanReadableName"));
+				domainContainer.add(it);
 			}
-			this.closeAll();
+			
+			dbResults.close();
 		} 
 		catch (SQLException e) 
 		{
 			e.printStackTrace();
 		}
-		return this.domainContainer;
+		finally
+		{
+			this.closeAll();
+		}
+		
+		return domainContainer;
 	}
 	
 	public AllowedItemType find(int id)
@@ -41,70 +50,58 @@ public class AllowedItemTypeDataMapper extends AbstractDataMapper
 		
 		try
 		{
-			this.dbResults = this.query("SELECT * FROM ItemType WHERE itemTypeId=" + id);
+			ResultSet dbResults = this.query("SELECT * FROM " + MAPPED_TABLE_NAME + " WHERE itemTypeId=" + id);
 			
-			while(this.dbResults.next())
+			if(dbResults.first())
 			{
 				it = new AllowedItemType();
-				it.setItemTypeId(this.dbResults.getInt("itemTypeId"));
-				it.setHumanReadableName(this.dbResults.getString("humanReadableName"));
+				it.setItemTypeId(dbResults.getInt("itemTypeId"));
+				it.setHumanReadableName(dbResults.getString("humanReadableName"));
 			}
+			
+			dbResults.close();
 		}
 		catch(SQLException exc)
 		{
 			
+		}
+		finally
+		{
+			this.closeAll();
 		}
 		
 		return it;
 	}
-	/* Currently does NOT work. The SQL statement has a weird behaviour...
-	public ArrayList<AllowedItemType> getAllowedItemTypesForChain(int id)
+
+	public ArrayList<AllowedItemType> findAllowedItemTypesForChain(int id)
 	{	
+		ArrayList<AllowedItemType> domainContainer = new ArrayList<AllowedItemType>();
+		
 		try
 		{
-			this.dbResults = this.paramQuery("SELECT ItemType.* FROM AllowedItemTypesInChain LEFT JOIN ItemType" +
-										" ON AllowedItemTypesInChain.itemTypeId = ItemType.itemTypeId" +
+			ResultSet dbResults = this.paramQuery("SELECT " + MAPPED_TABLE_NAME + ".* FROM AllowedItemTypesInChain LEFT JOIN (" + MAPPED_TABLE_NAME + ")" +
+										" ON (AllowedItemTypesInChain.itemTypeId = " + MAPPED_TABLE_NAME + ".itemTypeId)" +
 										" WHERE AllowedItemTypesInChain.chainId = ?", id);
 			
-			while(this.dbResults.next())
+			while(dbResults.next())
 			{
 				AllowedItemType it = new AllowedItemType();
-				it.setItemTypeId(this.dbResults.getInt("itemTypeId"));
-				it.setHumanReadableName(this.dbResults.getString("humanReadableName"));
-				this.domainContainer.add(it);
+				it.setItemTypeId(dbResults.getInt("itemTypeId"));
+				it.setHumanReadableName(dbResults.getString("humanReadableName"));
+				domainContainer.add(it);
 			}
+			
+			dbResults.close();
 		}
 		catch(SQLException exc)
 		{
 			
 		}
-	
-		return this.domainContainer;
-	}
-	*/
-	
-	public ArrayList<AllowedItemType> getAllowedItemTypesForChain(int id)
-	{	
-		try
-		{	
-			this.dbResults = this.query("SELECT * FROM AllowedItemTypesInChain");
-			
-			while(this.dbResults.next())
-			{	
-				if(this.dbResults.getInt("chainId") == id)
-				{
-					int itemId = this.dbResults.getInt("itemTypeId");
-					AllowedItemType a = this.find(itemId);
-					this.domainContainer.add(a);
-				}
-			}
-		}
-		catch(SQLException exc)
+		finally
 		{
-			
+			this.closeAll();
 		}
 	
-		return this.domainContainer;
+		return domainContainer;
 	}
-	
 }

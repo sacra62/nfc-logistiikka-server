@@ -1,38 +1,77 @@
 package nfc.logistics.models;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
 public class ChainDataMapper extends AbstractDataMapper
-{
-	private ArrayList<Chain> domainContainer;
+{	
+	private final static String DATABASE_NAME = "nfc_logistics";
+	private final static String MAPPED_TABLE_NAME = "LogisticsChain";
 	
 	public ChainDataMapper()
 	{
-		super("nfc_logistics");
-		this.domainContainer = new ArrayList<Chain>();
+		super(DATABASE_NAME);
 	}
 	
-	public ArrayList<Chain> getEveryChain()
+	public ArrayList<Chain> findAll()
 	{
+		ArrayList<Chain> domainContainer = new ArrayList<Chain>();
+		
 		try 
 		{
-			this.dbResults = this.query("SELECT * FROM LogisticsChain");
+			ResultSet dbResults = this.query("SELECT * FROM " + MAPPED_TABLE_NAME);
 			
-			while(this.dbResults.next())
+			while(dbResults.next())
 			{
 				Chain c = new Chain();
-				c.setChainId(this.dbResults.getInt("chainId"));
-				c.setChainShortName(this.dbResults.getString("shortName"));
-				c.setChainName(this.dbResults.getString("humanReadableName"));
-				this.domainContainer.add(c);
+				c.setChainId(dbResults.getInt("chainId"));
+				c.setChainShortName(dbResults.getString("shortName"));
+				c.setChainName(dbResults.getString("humanReadableName"));
+				domainContainer.add(c);
 			}
-			this.closeAll();
+			
+			dbResults.close();
 		} 
 		catch (SQLException e) 
 		{
 			e.printStackTrace();
 		}
-		return this.domainContainer;
+		finally
+		{
+			this.closeAll();
+		}
+		
+		return domainContainer;
+	}
+	
+	public Chain find(int id)
+	{
+		Chain c = null;
+		
+		try
+		{
+			ResultSet dbResults = this.paramQuery("SELECT * FROM " + MAPPED_TABLE_NAME + " WHERE chainId=", id);
+			
+			while(dbResults.next())
+			{
+				c = new Chain();
+				c.setChainId(dbResults.getInt("chainId"));
+				c.setChainShortName(dbResults.getString("shortName"));
+				c.setChainName(dbResults.getString("humanReadableName"));	
+			}
+			
+			dbResults.close();
+		}
+		catch(SQLException exc)
+		{
+			
+		}
+		finally
+		{
+			this.closeAll();
+		}
+		
+		return c;
 	}
 }

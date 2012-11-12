@@ -47,6 +47,9 @@ public class Event extends AbstractEvent
 		return this.eventShortName;
 	}
 	
+	// Didn't find any other way to NOT have duplicate elements!
+	// If the type referred to an entryComment class we would
+	// typically have entryComment's elements as XML...
 	@XmlElementWrapper(name="entryComments")
 	@XmlElements(
 		@XmlElement(name="entryComment", type=String.class)
@@ -59,5 +62,15 @@ public class Event extends AbstractEvent
 	public void addEntryComment(String e)
 	{
 		entryComments.add(e);
+	}
+
+	// Should find a nicer way to accomplish this...
+	// See @XmlElementsWrapper part
+	public void setEntryComments(ArrayList<EntryComment> comments) 
+	{
+		for(int i = 0; i < comments.size(); i++)
+		{
+			this.entryComments.add(comments.get(i).getEntryComment());
+		}
 	}
 }

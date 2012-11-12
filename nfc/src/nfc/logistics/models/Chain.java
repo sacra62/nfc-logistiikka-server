@@ -81,4 +81,9 @@ public class Chain
 	{
 		this.allowedItemTypes = list;
 	}
+	
+	public void setAllowedEvents(ArrayList<Event> list)
+	{
+		this.events = list;
+	}
 }
